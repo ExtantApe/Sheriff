@@ -18,25 +18,25 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Latchkey invites (owner, 2026-11-09; crossing latchkey-sheriff). When an admin makes an invite naming profiles, Sheriff
+ * WelcomeWagon invites (owner, 2026-11-09; crossing welcomewagon-sheriff). When an admin makes an invite naming profiles, Sheriff
  * runs its usual checks then, so a bad combination is refused before anyone arrives. When the invite is used, Sheriff
  * applies the profiles through the same change path as any approval, with the yeses given when the invite was made.
  *
- * <p>Latchkey is optional and Sheriff doesn't build against it: its events are found by name at startup and read through
- * their public methods, which are the agreed contract. If Latchkey isn't there, or its events don't match, this does
+ * <p>WelcomeWagon is optional and Sheriff doesn't build against it: its events are found by name at startup and read through
+ * their public methods, which are the agreed contract. If WelcomeWagon isn't there, or its events don't match, this does
  * nothing and says so once.
  */
-final class LatchkeyHook implements Listener {
-    static final String CHECK = "com.extantape.latchkey.api.InviteCheckEvent";
-    static final String REDEEMED = "com.extantape.latchkey.api.InviteRedeemedEvent";
-    static final String ACTOR = "Latchkey invite";
+final class WelcomeWagonHook implements Listener {
+    static final String CHECK = "com.extantape.welcomewagon.api.InviteCheckEvent";
+    static final String REDEEMED = "com.extantape.welcomewagon.api.InviteRedeemedEvent";
+    static final String ACTOR = "WelcomeWagon invite";
 
     /** What Sheriff says about an invite's profiles: a refusal, or questions keyed by their command-line id. */
     record Check(String refusalCode, String refusalText, Map<String, String> questions) {
         boolean refused() { return refusalCode != null; }
     }
 
-    private LatchkeyHook() {}
+    private WelcomeWagonHook() {}
 
     /**
      * Sheriff's checks for a new player. Invites are for people who haven't arrived, so the plan starts from no groups;
@@ -74,12 +74,12 @@ final class LatchkeyHook implements Listener {
         return out;
     }
 
-    /** Hooks into Latchkey's events if Latchkey is installed. */
+    /** Hooks into WelcomeWagon's events if WelcomeWagon is installed. */
     static void register(SheriffPlugin sheriff) {
-        Plugin latchkey = Bukkit.getPluginManager().getPlugin("Latchkey");
-        if (latchkey == null) return;
+        Plugin welcomewagon = Bukkit.getPluginManager().getPlugin("WelcomeWagon");
+        if (welcomewagon == null) return;
         try {
-            ClassLoader cl = latchkey.getClass().getClassLoader();
+            ClassLoader cl = welcomewagon.getClass().getClassLoader();
             Class<? extends Event> checkClass = cl.loadClass(CHECK).asSubclass(Event.class);
             Class<? extends Event> redeemedClass = cl.loadClass(REDEEMED).asSubclass(Event.class);
             Method getProfiles = checkClass.getMethod("getProfiles"), getConfirmed = checkClass.getMethod("getConfirmed");
@@ -87,7 +87,7 @@ final class LatchkeyHook implements Listener {
             Method checkedBy = checkClass.getMethod("checkedBy", String.class);
             Method rUuid = redeemedClass.getMethod("getUuid"), rName = redeemedClass.getMethod("getName");
             Method rProfiles = redeemedClass.getMethod("getProfiles"), rConfirmed = redeemedClass.getMethod("getConfirmed");
-            Listener owner = new LatchkeyHook();
+            Listener owner = new WelcomeWagonHook();
 
             Bukkit.getPluginManager().registerEvent(checkClass, owner, EventPriority.NORMAL, (l, event) -> {
                 if (!checkClass.isInstance(event)) return;
@@ -99,7 +99,7 @@ final class LatchkeyHook implements Listener {
                     if (c.refused()) refuse.invoke(event, c.refusalCode(), c.refusalText());
                     else for (var q : c.questions().entrySet()) need.invoke(event, q.getKey(), q.getValue());
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    sheriff.getLogger().log(Level.WARNING, "Couldn't check a Latchkey invite's profiles", e);
+                    sheriff.getLogger().log(Level.WARNING, "Couldn't check a WelcomeWagon invite's profiles", e);
                     try { refuse.invoke(event, "internal", "Sheriff couldn't check these profiles. See the server log."); } catch (ReflectiveOperationException ignored) {}
                 }
             }, sheriff);
@@ -113,12 +113,12 @@ final class LatchkeyHook implements Listener {
                     @SuppressWarnings("unchecked") Set<String> yes = (Set<String>) rConfirmed.invoke(event);
                     apply(sheriff, uuid, name, profiles, yes);
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    sheriff.getLogger().log(Level.WARNING, "Couldn't read a used Latchkey invite, so its profiles weren't applied", e);
+                    sheriff.getLogger().log(Level.WARNING, "Couldn't read a used WelcomeWagon invite, so its profiles weren't applied", e);
                 }
             }, sheriff);
-            sheriff.getLogger().info("Checking and applying the profiles on Latchkey invites.");
+            sheriff.getLogger().info("Checking and applying the profiles on WelcomeWagon invites.");
         } catch (ReflectiveOperationException | ClassCastException e) {
-            sheriff.getLogger().warning("Latchkey is installed but its invite events don't match what Sheriff expects, so invite profiles "
+            sheriff.getLogger().warning("WelcomeWagon is installed but its invite events don't match what Sheriff expects, so invite profiles "
                     + "won't be applied. Update both plugins. (" + e.getClass().getSimpleName() + ")");
         }
     }
@@ -130,7 +130,7 @@ final class LatchkeyHook implements Listener {
             return;
         }
         Set<String> confirmed = confirmedCodes(sheriff.settings(), yesIds);
-        var request = new ChangeService.Request(null, new ChangeService.Actor(ACTOR, null, "latchkey"), uuid, name,
+        var request = new ChangeService.Request(null, new ChangeService.Actor(ACTOR, null, "welcomewagon"), uuid, name,
                 new LinkedHashSet<>(profiles), Set.of(), confirmed, false);
         sheriff.changes().submit(request).thenAccept(result -> {
             if (result.ok()) return;

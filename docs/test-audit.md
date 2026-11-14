@@ -7,8 +7,8 @@ Kept by this repo's owning session (Minecraft: Plugins Lead), per `~/Code/CLAUDE
 
 | Promise | Covered by |
 | --- | --- |
-| A Latchkey invite's profiles are checked when it's made: unknown and admin-granting profiles refused, a second circle asked as a question, only its own yes answers it | unit `LatchkeyHookTest` (8 tests); live in Latchkey's own bot test, which runs with Sheriff |
-| **A profile that turns unsafe between the invite and its use isn't applied, and the log says so** | **new**, live in Latchkey's bot test ("a profile made unsafe after the invite is not applied when it's used"). Sheriff re-checks through the same `ChangeService` as every other change |
+| A WelcomeWagon invite's profiles are checked when it's made: unknown and admin-granting profiles refused, a second circle asked as a question, only its own yes answers it | unit `WelcomeWagonHookTest` (8 tests); live in WelcomeWagon's own bot test, which runs with Sheriff |
+| **A profile that turns unsafe between the invite and its use isn't applied, and the log says so** | **new**, live in WelcomeWagon's bot test ("a profile made unsafe after the invite is not applied when it's used"). Sheriff re-checks through the same `ChangeService` as every other change |
 | Without LuckPerms, no invite profile is allowed | unit `withoutLuckPermsNothingIsAllowed` |
 | One answer line per console request, format 1, with stable codes (`unknown-command`, `bad-argument`, a bad id) | unit `ConsoleCommandsTest`; live "an unknown command still gets one answer", "bad arguments answer bad-argument", "a bad request id is answered in plain words" |
 | `describe` lists every command and marks only the optional arguments | unit `describeListsEveryCommand`, `describeMarksTheOptionalArgumentsAndOnlyThose`; live |

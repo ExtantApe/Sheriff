@@ -57,7 +57,7 @@ public final class SheriffPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(attempts, this);
         getServer().getPluginManager().registerEvents(access, this);
         getServer().getPluginManager().registerEvents(menus, this);
-        LatchkeyHook.register(this);
+        WelcomeWagonHook.register(this);
 
         PlayerCommands players = new PlayerCommands(this);
         ConsoleCommands console = new ConsoleCommands(this);

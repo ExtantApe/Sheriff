@@ -257,7 +257,7 @@ final class ConsoleCommands implements BasicCommand {
 
     private void apply(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
         ApplyArgs a = parseApply(rest);
-        Set<String> confirmed = LatchkeyHook.confirmedCodes(plugin.settings(), r.yes());
+        Set<String> confirmed = WelcomeWagonHook.confirmedCodes(plugin.settings(), r.yes());
         var request = new ChangeService.Request(r.id(), ChangeService.Actor.console(a.via()), a.uuid(), a.name(), a.add(), a.remove(), confirmed, a.whitelist());
         plugin.changes().submit(request).whenComplete((result, e) -> plugin.runMain(() -> {
             if (e != null || result == null) { fail(sender, r.id(), Errors.INTERNAL, "Something went wrong inside Sheriff. See the server log."); return; }
@@ -275,7 +275,7 @@ final class ConsoleCommands implements BasicCommand {
             }
             case "warn" -> {
                 List<Confirm.Question> qs = new ArrayList<>();
-                for (Planner.Warning w : result.warnings()) qs.add(new Confirm.Question(LatchkeyHook.toYesId(w.code()), w.text()));
+                for (Planner.Warning w : result.warnings()) qs.add(new Confirm.Question(WelcomeWagonHook.toYesId(w.code()), w.text()));
                 if (r.json()) send(sender, Answer.needs(r.id(), qs));
                 else {
                     sender.sendMessage(result.message());

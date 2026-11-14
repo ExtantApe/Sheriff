@@ -11,9 +11,9 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
-    # Optional: with Latchkey, Sheriff checks an invite's profiles when it's made and applies them when it's used.
-    # Sheriff reads Latchkey's events by name, so it builds and runs without it.
-    Latchkey:
+    # Optional: with WelcomeWagon, Sheriff checks an invite's profiles when it's made and applies them when it's used.
+    # Sheriff reads WelcomeWagon's events by name, so it builds and runs without it.
+    WelcomeWagon:
       load: BEFORE
       required: false
 permissions:

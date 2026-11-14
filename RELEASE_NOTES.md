@@ -10,7 +10,7 @@ With the server stopped:
 3. Use `/sheriff` for the console commands.
 4. Swap in `Sheriff-0.5.0.jar`.
 
-Leaf Juice needs its matching update to find Sheriff.
+Install WelcomeWagon 0.6.0 at the same time: Sheriff hooks its invite events by their new names. Leaf Juice needs its matching update to find Sheriff.
 
 ## Tested
 
