@@ -1,7 +1,7 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
-import com.extantape.usher.api.ProfilesChangedEvent;
-import com.extantape.usher.api.UsherProblemEvent;
+import com.extantape.sheriff.api.ProfilesChangedEvent;
+import com.extantape.sheriff.api.SheriffProblemEvent;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
@@ -30,9 +30,9 @@ import java.util.logging.Level;
  */
 public final class ChangeService {
 
-    public static final String PERMISSION = "usher.approve";
+    public static final String PERMISSION = "sheriff.approve";
 
-    /** True for approvers. The old Stationmaster node stopped working in 0.4.0, as 0.3.x said it would. */
+    /** True for approvers. */
     public static boolean mayApprove(org.bukkit.permissions.Permissible who) {
         return who.hasPermission(PERMISSION);
     }
@@ -51,14 +51,14 @@ public final class ChangeService {
         public boolean ok() { return status.equals("ok"); }
     }
 
-    private final UsherPlugin plugin;
+    private final SheriffPlugin plugin;
     private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "Usher changes");
+        Thread t = new Thread(r, "Sheriff changes");
         t.setDaemon(true);
         return t;
     });
 
-    ChangeService(UsherPlugin plugin) { this.plugin = plugin; }
+    ChangeService(SheriffPlugin plugin) { this.plugin = plugin; }
 
     public CompletableFuture<Result> submit(Request request) {
         return CompletableFuture.supplyAsync(() -> {
@@ -66,7 +66,7 @@ public final class ChangeService {
                 return run(request);
             } catch (RuntimeException e) {
                 plugin.getLogger().log(Level.SEVERE, "A change for " + request.targetName() + " failed unexpectedly", e);
-                return result(request, "error", "internal", "Something went wrong inside Usher, so the change stopped. See the server log.", List.of(), null, false, false);
+                return result(request, "error", "internal", "Something went wrong inside Sheriff, so the change stopped. See the server log.", List.of(), null, false, false);
             }
         }, worker);
     }
@@ -77,7 +77,7 @@ public final class ChangeService {
         Settings settings = plugin.settings();
         GroupStore store = plugin.store();
         AuditLog audit = plugin.audit();
-        if (audit == null) return result(r, "error", "log_failed", "Usher can't open its change log, so nothing was changed.", List.of(), null, false, false);
+        if (audit == null) return result(r, "error", "log_failed", "Sheriff can't open its change log, so nothing was changed.", List.of(), null, false, false);
 
         if (r.requestId() != null) {
             JsonObject previous = audit.resultFor(r.requestId());
@@ -93,7 +93,7 @@ public final class ChangeService {
 
         // Checks that need the main thread: permissions and the whitelist.
         String[] pre = callMain(() -> {
-            if (!plugin.settings().ok()) return new String[]{"config_broken", "Usher's config is broken, so nothing was changed. " + plugin.settings().problems().get(0)};
+            if (!plugin.settings().ok()) return new String[]{"config_broken", "Sheriff's config is broken, so nothing was changed. " + plugin.settings().problems().get(0)};
             if (!plugin.store().ready()) return new String[]{"luckperms_missing", "LuckPerms isn't running, so nothing was changed."};
             if (!r.actor().isConsole()) {
                 Player admin = Bukkit.getPlayer(r.actor().uuid());
@@ -130,10 +130,10 @@ public final class ChangeService {
             audit.write(entry(r, seq, "started", plan, settings, null));
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Couldn't write changes.log", e);
-            return problem(r, "log_failed", "Usher couldn't write its change log, so nothing was changed.");
+            return problem(r, "log_failed", "Sheriff couldn't write its change log, so nothing was changed.");
         }
 
-        pause("usher.test.pause-before-groups");
+        pause("sheriff.test.pause-before-groups");
         GroupStore.UserState after;
         try {
             after = plan.addGroups().isEmpty() && plan.removeGroups().isEmpty() ? state
@@ -141,7 +141,7 @@ public final class ChangeService {
         } catch (Exception e) {
             return luckPermsFailed(r, seq, e);
         }
-        pause("usher.test.pause-after-groups");
+        pause("sheriff.test.pause-after-groups");
 
         List<String> added = ids(settings, plan.addGroups()), removed = ids(settings, plan.removeGroups());
         // Found by name, so the whitelist entry carries the name and not just the UUID. Only used if it's the same account.
@@ -192,7 +192,7 @@ public final class ChangeService {
     }
 
     private void fireProblem(String code, String message, Request r) {
-        plugin.runMain(() -> Bukkit.getPluginManager().callEvent(new UsherProblemEvent(code, message, r.target(), r.actor().name())));
+        plugin.runMain(() -> Bukkit.getPluginManager().callEvent(new SheriffProblemEvent(code, message, r.target(), r.actor().name())));
     }
 
     private void log(AuditLog audit, JsonObject entry) {
@@ -244,7 +244,7 @@ public final class ChangeService {
             sb.append(name).append(" now has ").append(labels(s, added)).append(".");
         }
         if (!removed.isEmpty()) sb.append(sb.isEmpty() ? "" : " ").append(labels(s, removed)).append(removed.size() == 1 ? " was" : " were").append(" taken off ").append(name).append(".");
-        if (!plan.keptByInheritance().isEmpty()) sb.append(" They still get ").append(labels(s, plan.keptByInheritance())).append(" through another group, which Usher can't change.");
+        if (!plan.keptByInheritance().isEmpty()) sb.append(" They still get ").append(labels(s, plan.keptByInheritance())).append(" through another group, which Sheriff can't change.");
         return sb.toString().trim();
     }
 
@@ -252,7 +252,7 @@ public final class ChangeService {
         StringBuilder sb = new StringBuilder("Nothing to change for ").append(r.targetName()).append(".");
         if (!plan.alreadyHad().isEmpty()) sb.append(" They already have ").append(labels(s, plan.alreadyHad())).append(".");
         if (!plan.didNotHave().isEmpty()) sb.append(" They didn't have ").append(labels(s, plan.didNotHave())).append(".");
-        if (!plan.keptByInheritance().isEmpty()) sb.append(" They get ").append(labels(s, plan.keptByInheritance())).append(" through another group, which Usher can't change.");
+        if (!plan.keptByInheritance().isEmpty()) sb.append(" They get ").append(labels(s, plan.keptByInheritance())).append(" through another group, which Sheriff can't change.");
         return sb.toString();
     }
 

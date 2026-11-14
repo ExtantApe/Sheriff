@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,7 +8,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Usher's checks on Latchkey invites, without a server. The reflection wiring is covered by the bot tests. */
+/** Sheriff's checks on Latchkey invites, without a server. The reflection wiring is covered by the bot tests. */
 class LatchkeyHookTest {
     Settings settings;
     FakeStore store;
@@ -48,7 +48,7 @@ class LatchkeyHookTest {
         for (String id : c.questions().keySet()) assertTrue(id.matches("[a-z0-9-]{1,64}"), id);
     }
 
-    @Test void yesIdsMapBackToUshersCodes() {
+    @Test void yesIdsMapBackToSheriffsCodes() {
         assertEquals("confirm-grown-sky", LatchkeyHook.toYesId("confirm:grown_sky"));
         assertEquals(Set.of("confirm:grown_sky", "bridge"), LatchkeyHook.confirmedCodes(settings, Set.of("confirm-grown-sky", "bridge")));
         assertEquals(Set.of(), LatchkeyHook.confirmedCodes(settings, Set.of("confirm-nothing", "made-up")));

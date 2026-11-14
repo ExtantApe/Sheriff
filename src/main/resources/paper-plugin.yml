@@ -1,22 +1,22 @@
-name: Usher
+name: Sheriff
 version: '${version}'
-main: com.extantape.usher.UsherPlugin
+main: com.extantape.sheriff.SheriffPlugin
 api-version: '26.1'
 description: Approve new players and choose their profiles, without typing LuckPerms commands.
-website: https://github.com/ExtantApe/Usher
+website: https://github.com/ExtantApe/Sheriff
 dependencies:
   server:
-    # Optional on purpose: without LuckPerms, Usher still loads and refuses every change, saying why.
+    # Optional on purpose: without LuckPerms, Sheriff still loads and refuses every change, saying why.
     LuckPerms:
       load: BEFORE
       required: false
       join-classpath: true
-    # Optional: with Latchkey, Usher checks an invite's profiles when it's made and applies them when it's used.
-    # Usher reads Latchkey's events by name, so it builds and runs without it.
+    # Optional: with Latchkey, Sheriff checks an invite's profiles when it's made and applies them when it's used.
+    # Sheriff reads Latchkey's events by name, so it builds and runs without it.
     Latchkey:
       load: BEFORE
       required: false
 permissions:
-  usher.approve:
+  sheriff.approve:
     description: Approve people and change their profiles, by command or menu. Nobody can use it on themselves.
     default: false

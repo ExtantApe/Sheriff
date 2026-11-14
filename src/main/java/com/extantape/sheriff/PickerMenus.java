@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
@@ -75,10 +75,10 @@ final class PickerMenus implements Listener {
         Set<String> removes() { Set<String> s = new LinkedHashSet<>(startOn); s.removeAll(wanted); return s; }
     }
 
-    private final UsherPlugin plugin;
+    private final SheriffPlugin plugin;
     private final Map<UUID, Menu> open = new HashMap<>();
 
-    PickerMenus(UsherPlugin plugin) { this.plugin = plugin; }
+    PickerMenus(SheriffPlugin plugin) { this.plugin = plugin; }
 
     void open(Player admin, NameResolver.Resolved target, boolean approving, GroupStore.UserState state) {
         if (!ChangeService.mayApprove(admin)) return;

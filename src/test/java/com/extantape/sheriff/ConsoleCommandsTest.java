@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import com.extantape.signalbox.Request;
 import com.google.gson.JsonParser;
@@ -56,14 +56,14 @@ class ConsoleCommandsTest {
     }
 
     @Test void describeMarksTheOptionalArgumentsAndOnlyThose() {
-        String line = com.extantape.signalbox.Answer.ok("d1", com.extantape.signalbox.Describe.body("Usher", "0.4.0", ConsoleCommands.described()));
+        String line = com.extantape.signalbox.Answer.ok("d1", com.extantape.signalbox.Describe.body("Sheriff", "0.4.0", ConsoleCommands.described()));
         assertTrue(line.contains("{\"name\":\"whitelist\",\"type\":\"bool\",\"optional\":true}"), line);
         assertTrue(line.contains("{\"name\":\"via\",\"type\":\"string\",\"optional\":true}"), line);
         assertTrue(line.contains("{\"name\":\"uuid\",\"type\":\"uuid\"}"), "required ones carry no optional key");
         assertTrue(line.contains("{\"name\":\"limit\",\"type\":\"int\",\"optional\":true}"));
     }
 
-    @Test void cursorsAreOnlyOnesUsherHandedOut() throws Exception {
+    @Test void cursorsAreOnlyOnesSheriffHandedOut() throws Exception {
         assertEquals(50, ConsoleCommands.cursorOf("50"));
         assertEquals(0, ConsoleCommands.cursorOf("0"));
         for (String bad : List.of("-1", "abc", "1.5", "9999999999")) assertThrows(ConsoleCommands.Refusal.class, () -> ConsoleCommands.cursorOf(bad), bad);

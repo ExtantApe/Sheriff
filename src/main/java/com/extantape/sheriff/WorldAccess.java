@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -23,9 +23,9 @@ import java.util.Set;
  */
 public final class WorldAccess implements Listener {
 
-    private final UsherPlugin plugin;
+    private final SheriffPlugin plugin;
 
-    WorldAccess(UsherPlugin plugin) { this.plugin = plugin; }
+    WorldAccess(SheriffPlugin plugin) { this.plugin = plugin; }
 
     public static boolean closed(Settings settings, Set<String> groups, String world) {
         boolean listed = false;

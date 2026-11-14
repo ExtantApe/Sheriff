@@ -37,3 +37,7 @@ Decisions the owner made for Stationmaster, with dates. Follow them without aski
 - **Invites (2026-11-09, owner):** when a Latchkey invite is redeemed, the username is whitelisted at once and Usher, if installed, applies the profile the invite names, through its usual safety rules. To be built with Latchkey 0.2.0 (crossing `latchkey-usher`).
 - **Profiles on invites (2026-11-09, owner):** a Latchkey invite carries a list of Usher profiles. Usher runs its safety checks when the invite is created, so a bad combination is refused before anyone arrives, and applies the profiles when it's redeemed. An invite with no profiles gives lobby-only access until an admin adds more. Usher's commands get a machine-readable JSON form and `/usher describe`, through the shared command library. Waystation and HouseRules need nothing new: their platforms and circles are already permissions a profile can carry.
 - **Console format and the old names (2026-11-10, owner through Helm):** 0.4.0 moves the console commands to the shared Signalbox format (`--json <id>`, `ea-result`, `describe`) and removes `stationmaster`, `smaster` and `stationmaster.approve`, as 0.3.x promised. Leaf Juice's asks (crossing plugins-leafjuice, ledger 10f277027b09): `none` is reserved and can't be a profile name, and `describe` marks optional arguments (Signalbox 0.2.0).
+
+## 2026-11-14
+
+- **Name (owner, D194):** the plugin is renamed Sheriff. The owner chose "Sheriff (Recommended)", and asked that no old names be kept: no aliases, no old permissions and no folder copy. Released as 0.5.0.
