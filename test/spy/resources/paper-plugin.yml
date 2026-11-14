@@ -1,11 +1,11 @@
-name: UsherSpy
+name: SheriffSpy
 version: '1'
-main: com.extantape.usher.spy.SpyPlugin
+main: com.extantape.sheriff.spy.SpyPlugin
 api-version: '26.1'
-description: Test only. Logs Usher's events to the console.
+description: Test only. Logs Sheriff's events to the console.
 dependencies:
   server:
-    Usher:
+    Sheriff:
       load: BEFORE
       required: true
       join-classpath: true

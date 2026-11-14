@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
@@ -18,32 +18,32 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Latchkey invites (owner, 2026-11-09; crossing latchkey-usher). When an admin makes an invite naming profiles, Usher
- * runs its usual checks then, so a bad combination is refused before anyone arrives. When the invite is used, Usher
+ * WelcomeWagon invites (owner, 2026-11-09; crossing welcomewagon-sheriff). When an admin makes an invite naming profiles, Sheriff
+ * runs its usual checks then, so a bad combination is refused before anyone arrives. When the invite is used, Sheriff
  * applies the profiles through the same change path as any approval, with the yeses given when the invite was made.
  *
- * <p>Latchkey is optional and Usher doesn't build against it: its events are found by name at startup and read through
- * their public methods, which are the agreed contract. If Latchkey isn't there, or its events don't match, this does
+ * <p>WelcomeWagon is optional and Sheriff doesn't build against it: its events are found by name at startup and read through
+ * their public methods, which are the agreed contract. If WelcomeWagon isn't there, or its events don't match, this does
  * nothing and says so once.
  */
-final class LatchkeyHook implements Listener {
-    static final String CHECK = "com.extantape.latchkey.api.InviteCheckEvent";
-    static final String REDEEMED = "com.extantape.latchkey.api.InviteRedeemedEvent";
-    static final String ACTOR = "Latchkey invite";
+final class WelcomeWagonHook implements Listener {
+    static final String CHECK = "com.extantape.welcomewagon.api.InviteCheckEvent";
+    static final String REDEEMED = "com.extantape.welcomewagon.api.InviteRedeemedEvent";
+    static final String ACTOR = "WelcomeWagon invite";
 
-    /** What Usher says about an invite's profiles: a refusal, or questions keyed by their command-line id. */
+    /** What Sheriff says about an invite's profiles: a refusal, or questions keyed by their command-line id. */
     record Check(String refusalCode, String refusalText, Map<String, String> questions) {
         boolean refused() { return refusalCode != null; }
     }
 
-    private LatchkeyHook() {}
+    private WelcomeWagonHook() {}
 
     /**
-     * Usher's checks for a new player. Invites are for people who haven't arrived, so the plan starts from no groups;
+     * Sheriff's checks for a new player. Invites are for people who haven't arrived, so the plan starts from no groups;
      * when the invite is used the real plan runs again against their actual groups.
      */
     static Check check(Settings settings, GroupStore store, Collection<String> profiles, Set<String> yesIds) {
-        if (!store.ready()) return new Check("luckperms-missing", "LuckPerms isn't running, so Usher can't check these profiles.", Map.of());
+        if (!store.ready()) return new Check("luckperms-missing", "LuckPerms isn't running, so Sheriff can't check these profiles.", Map.of());
         Set<String> confirmed = confirmedCodes(settings, yesIds);
         Planner.Plan plan = Planner.plan(settings, store, new GroupStore.UserState(Set.of(), Set.of()),
                 new LinkedHashSet<>(profiles), Set.of(), confirmed);
@@ -54,7 +54,7 @@ final class LatchkeyHook implements Listener {
     }
 
     /**
-     * Usher's warning codes as command-line ids, which allow only {@code a-z 0-9 -}: {@code confirm:grown_sky} becomes
+     * Sheriff's warning codes as command-line ids, which allow only {@code a-z 0-9 -}: {@code confirm:grown_sky} becomes
      * {@code confirm-grown-sky}.
      */
     static String toYesId(String code) { return code.replace(':', '-').replace('_', '-'); }
@@ -74,12 +74,12 @@ final class LatchkeyHook implements Listener {
         return out;
     }
 
-    /** Hooks into Latchkey's events if Latchkey is installed. */
-    static void register(UsherPlugin usher) {
-        Plugin latchkey = Bukkit.getPluginManager().getPlugin("Latchkey");
-        if (latchkey == null) return;
+    /** Hooks into WelcomeWagon's events if WelcomeWagon is installed. */
+    static void register(SheriffPlugin sheriff) {
+        Plugin welcomewagon = Bukkit.getPluginManager().getPlugin("WelcomeWagon");
+        if (welcomewagon == null) return;
         try {
-            ClassLoader cl = latchkey.getClass().getClassLoader();
+            ClassLoader cl = welcomewagon.getClass().getClassLoader();
             Class<? extends Event> checkClass = cl.loadClass(CHECK).asSubclass(Event.class);
             Class<? extends Event> redeemedClass = cl.loadClass(REDEEMED).asSubclass(Event.class);
             Method getProfiles = checkClass.getMethod("getProfiles"), getConfirmed = checkClass.getMethod("getConfirmed");
@@ -87,22 +87,22 @@ final class LatchkeyHook implements Listener {
             Method checkedBy = checkClass.getMethod("checkedBy", String.class);
             Method rUuid = redeemedClass.getMethod("getUuid"), rName = redeemedClass.getMethod("getName");
             Method rProfiles = redeemedClass.getMethod("getProfiles"), rConfirmed = redeemedClass.getMethod("getConfirmed");
-            Listener owner = new LatchkeyHook();
+            Listener owner = new WelcomeWagonHook();
 
             Bukkit.getPluginManager().registerEvent(checkClass, owner, EventPriority.NORMAL, (l, event) -> {
                 if (!checkClass.isInstance(event)) return;
                 try {
                     @SuppressWarnings("unchecked") List<String> profiles = (List<String>) getProfiles.invoke(event);
                     @SuppressWarnings("unchecked") Set<String> yes = (Set<String>) getConfirmed.invoke(event);
-                    Check c = check(usher.settings(), usher.store(), profiles, yes);
-                    checkedBy.invoke(event, "Usher");
+                    Check c = check(sheriff.settings(), sheriff.store(), profiles, yes);
+                    checkedBy.invoke(event, "Sheriff");
                     if (c.refused()) refuse.invoke(event, c.refusalCode(), c.refusalText());
                     else for (var q : c.questions().entrySet()) need.invoke(event, q.getKey(), q.getValue());
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    usher.getLogger().log(Level.WARNING, "Couldn't check a Latchkey invite's profiles", e);
-                    try { refuse.invoke(event, "internal", "Usher couldn't check these profiles. See the server log."); } catch (ReflectiveOperationException ignored) {}
+                    sheriff.getLogger().log(Level.WARNING, "Couldn't check a WelcomeWagon invite's profiles", e);
+                    try { refuse.invoke(event, "internal", "Sheriff couldn't check these profiles. See the server log."); } catch (ReflectiveOperationException ignored) {}
                 }
-            }, usher);
+            }, sheriff);
 
             Bukkit.getPluginManager().registerEvent(redeemedClass, owner, EventPriority.MONITOR, (l, event) -> {
                 if (!redeemedClass.isInstance(event)) return;
@@ -111,33 +111,33 @@ final class LatchkeyHook implements Listener {
                     String name = (String) rName.invoke(event);
                     @SuppressWarnings("unchecked") List<String> profiles = (List<String>) rProfiles.invoke(event);
                     @SuppressWarnings("unchecked") Set<String> yes = (Set<String>) rConfirmed.invoke(event);
-                    apply(usher, uuid, name, profiles, yes);
+                    apply(sheriff, uuid, name, profiles, yes);
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    usher.getLogger().log(Level.WARNING, "Couldn't read a used Latchkey invite, so its profiles weren't applied", e);
+                    sheriff.getLogger().log(Level.WARNING, "Couldn't read a used WelcomeWagon invite, so its profiles weren't applied", e);
                 }
-            }, usher);
-            usher.getLogger().info("Checking and applying the profiles on Latchkey invites.");
+            }, sheriff);
+            sheriff.getLogger().info("Checking and applying the profiles on WelcomeWagon invites.");
         } catch (ReflectiveOperationException | ClassCastException e) {
-            usher.getLogger().warning("Latchkey is installed but its invite events don't match what Usher expects, so invite profiles "
+            sheriff.getLogger().warning("WelcomeWagon is installed but its invite events don't match what Sheriff expects, so invite profiles "
                     + "won't be applied. Update both plugins. (" + e.getClass().getSimpleName() + ")");
         }
     }
 
     /** Applies an invite's profiles as a change made by the admin who made the invite, with their earlier yeses. */
-    static void apply(UsherPlugin usher, UUID uuid, String name, List<String> profiles, Set<String> yesIds) {
+    static void apply(SheriffPlugin sheriff, UUID uuid, String name, List<String> profiles, Set<String> yesIds) {
         if (profiles.isEmpty()) {
-            usher.getLogger().info(name + " joined through an invite with no profiles, so they have lobby-only access for now.");
+            sheriff.getLogger().info(name + " joined through an invite with no profiles, so they have lobby-only access for now.");
             return;
         }
-        Set<String> confirmed = confirmedCodes(usher.settings(), yesIds);
-        var request = new ChangeService.Request(null, new ChangeService.Actor(ACTOR, null, "latchkey"), uuid, name,
+        Set<String> confirmed = confirmedCodes(sheriff.settings(), yesIds);
+        var request = new ChangeService.Request(null, new ChangeService.Actor(ACTOR, null, "welcomewagon"), uuid, name,
                 new LinkedHashSet<>(profiles), Set.of(), confirmed, false);
-        usher.changes().submit(request).thenAccept(result -> {
+        sheriff.changes().submit(request).thenAccept(result -> {
             if (result.ok()) return;
             List<String> asks = new ArrayList<>();
             for (Planner.Warning w : result.warnings()) asks.add(w.text());
-            usher.getLogger().warning("The profiles on " + name + "'s invite weren't applied: " + result.message()
-                    + (asks.isEmpty() ? "" : " " + String.join(" ", asks)) + " Apply them with /usher once that's sorted.");
+            sheriff.getLogger().warning("The profiles on " + name + "'s invite weren't applied: " + result.message()
+                    + (asks.isEmpty() ? "" : " " + String.join(" ", asks)) + " Apply them with /sheriff once that's sorted.");
         });
     }
 }

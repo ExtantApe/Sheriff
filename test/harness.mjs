@@ -1,13 +1,13 @@
 // Test harness: builds a fresh throwaway Paper server in a temp folder, on 127.0.0.1 only, and drives it from the
 // console with mineflayer bots as players. It never copies or touches a real server.
 //
-//   USHER_TEST_JARS   folder with paper-<version>.jar, LuckPerms-Bukkit-*.jar, multiverse-core-*.jar,
+//   SHERIFF_TEST_JARS   folder with paper-<version>.jar, LuckPerms-Bukkit-*.jar, multiverse-core-*.jar,
 //                             multiverse-inventories-*.jar, ViaVersion-*.jar and ViaBackwards-*.jar
-//   USHER_TEST_EULA   an eula.txt the owner already accepted. It's copied, never written.
-//   USHER_TEST_RUN    where servers are built. Must be under a temp folder.
-//   USHER_TEST_PAPER  26.1.2 (default), 26.2 or 26.3
-//   USHER_TEST_JAVA   a Java 25 to run Paper with
-//   USHER_TEST_STORAGE  LuckPerms storage: yaml (default) or h2
+//   SHERIFF_TEST_EULA   an eula.txt the owner already accepted. It's copied, never written.
+//   SHERIFF_TEST_RUN    where servers are built. Must be under a temp folder.
+//   SHERIFF_TEST_PAPER  26.1.2 (default), 26.2 or 26.3
+//   SHERIFF_TEST_JAVA   a Java 25 to run Paper with
+//   SHERIFF_TEST_STORAGE  LuckPerms storage: yaml (default) or h2
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, writeFileSync, copyFileSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
@@ -15,24 +15,24 @@ import os from 'node:os'
 import mineflayer from 'mineflayer'
 
 export const PORT = 25615
-export const PAPER = process.env.USHER_TEST_PAPER ?? '26.1.2'
+export const PAPER = process.env.SHERIFF_TEST_PAPER ?? '26.1.2'
 // mineflayer speaks up to 26.1, so on newer servers the bots join through ViaVersion and ViaBackwards.
 export const BOT_VERSION = '26.1'
 export const VIA = !PAPER.startsWith('26.1')
-export const JAVA = process.env.USHER_TEST_JAVA ?? 'java'
-export const STORAGE = process.env.USHER_TEST_STORAGE ?? 'yaml'
-if (!['yaml', 'h2'].includes(STORAGE)) throw new Error('USHER_TEST_STORAGE must be yaml or h2, not ' + STORAGE)
-const JARS = must('USHER_TEST_JARS')
-const EULA = must('USHER_TEST_EULA')
-export const RUN = path.resolve(must('USHER_TEST_RUN'))
+export const JAVA = process.env.SHERIFF_TEST_JAVA ?? 'java'
+export const STORAGE = process.env.SHERIFF_TEST_STORAGE ?? 'yaml'
+if (!['yaml', 'h2'].includes(STORAGE)) throw new Error('SHERIFF_TEST_STORAGE must be yaml or h2, not ' + STORAGE)
+const JARS = must('SHERIFF_TEST_JARS')
+const EULA = must('SHERIFF_TEST_EULA')
+export const RUN = path.resolve(must('SHERIFF_TEST_RUN'))
 const temp = [os.tmpdir(), '/tmp', '/private/tmp', '/var/folders'].map(p => path.resolve(p))
-if (!temp.some(t => RUN.startsWith(t + path.sep))) throw new Error('USHER_TEST_RUN must be inside a temp folder, not ' + RUN)
+if (!temp.some(t => RUN.startsWith(t + path.sep))) throw new Error('SHERIFF_TEST_RUN must be inside a temp folder, not ' + RUN)
 if (!/^eula=true$/m.test(readFileSync(EULA, 'utf8'))) throw new Error('That eula.txt isn\'t accepted. Accepting it is the owner\'s call.')
 
 const ROOT = new URL('../', import.meta.url).pathname
 const LIBS = path.join(ROOT, 'build/libs/')
-const built = existsSync(LIBS) ? readdirSync(LIBS).filter(f => /^Usher-.*\.jar$/.test(f)) : []
-if (built.length !== 1) throw new Error(`Run ./gradlew clean build first: expected one Usher jar in build/libs, found ${built.length}`)
+const built = existsSync(LIBS) ? readdirSync(LIBS).filter(f => /^Sheriff-.*\.jar$/.test(f)) : []
+if (built.length !== 1) throw new Error(`Run ./gradlew clean build first: expected one Sheriff jar in build/libs, found ${built.length}`)
 export const JAR = path.join(LIBS, built[0])
 
 function must(name) {
@@ -63,7 +63,7 @@ export function freshServer(name = 'server', { luckperms = true, storage = STORA
   writeFileSync(path.join(dir, 'server.properties'), [
     'server-ip=127.0.0.1', `server-port=${PORT}`, 'online-mode=false', 'white-list=true', 'enforce-whitelist=true',
     'level-type=minecraft\\:flat', 'generate-structures=false', 'spawn-protection=0', 'enable-query=false', 'enable-rcon=false',
-    'view-distance=4', 'simulation-distance=4', 'difficulty=peaceful', 'spawn-monsters=false', 'motd=Usher test'].join('\n') + '\n')
+    'view-distance=4', 'simulation-distance=4', 'difficulty=peaceful', 'spawn-monsters=false', 'motd=Sheriff test'].join('\n') + '\n')
   if (luckperms) {
     mkdirSync(path.join(dir, 'plugins/LuckPerms'), { recursive: true })
     writeFileSync(path.join(dir, 'plugins/LuckPerms/config.yml'), `server: global\nstorage-method: ${storage}\nwatch-files: false\n`)
@@ -71,12 +71,12 @@ export function freshServer(name = 'server', { luckperms = true, storage = STORA
   return dir
 }
 
-export const SPY = path.join(ROOT, 'build/test-spy/UsherSpy.jar')
+export const SPY = path.join(ROOT, 'build/test-spy/SheriffSpy.jar')
 
 export function installJar(dir) {
-  copyFileSync(JAR, path.join(dir, 'plugins', 'Usher.jar'))
+  copyFileSync(JAR, path.join(dir, 'plugins', 'Sheriff.jar'))
   if (!existsSync(SPY)) throw new Error('Run ./gradlew spyJar first')
-  copyFileSync(SPY, path.join(dir, 'plugins', 'UsherSpy.jar'))
+  copyFileSync(SPY, path.join(dir, 'plugins', 'SheriffSpy.jar'))
 }
 
 /** The shipped config with test settings: offline lookups and the lobby. */
@@ -86,8 +86,8 @@ export function writeConfig(dir, edit = t => t) {
     if (!text.includes(from)) throw new Error('The default config no longer has: ' + from)
     text = text.replace(from, to)
   }
-  mkdirSync(path.join(dir, 'plugins/Usher'), { recursive: true })
-  writeFileSync(path.join(dir, 'plugins/Usher/config.yml'), edit(text))
+  mkdirSync(path.join(dir, 'plugins/Sheriff'), { recursive: true })
+  writeFileSync(path.join(dir, 'plugins/Sheriff/config.yml'), edit(text))
 }
 
 export class Server {
@@ -115,7 +115,7 @@ export class Server {
       if (this.proc.exitCode !== null) {
         const last = this.log.slice(-5).map(strip).join('\n    ')
         throw new Error(`Server exited (code ${this.proc.exitCode}) while waiting for ${re}. Its last lines:\n    ${last}\n` +
-          '  Paper 26 needs Java 25. Set USHER_TEST_JAVA if `java` is older.')
+          '  Paper 26 needs Java 25. Set SHERIFF_TEST_JAVA if `java` is older.')
       }
       await sleep(50)
     }
@@ -130,7 +130,7 @@ export class Server {
     return this.log.slice(from).map(strip)
   }
   /**
-   * Runs a usher console command in the Signalbox format (0.4.0: `usher <sub> <args> [--yes ids] --json <id>`) and
+   * Runs a sheriff console command in the Signalbox format (0.4.0: `sheriff <sub> <args> [--yes ids] --json <id>`) and
    * returns the answer, mapped back to the fields the checks read: status (ok, warn, refused, error), code with
    * underscores, message, and warnings for questions. The raw line and answer stay on .line and .raw.
    * Arguments may use the old shorthand (+profile, -profile, confirm=, whitelist=, via=); they're translated here.
@@ -139,13 +139,13 @@ export class Server {
   /** Same, with a request id chosen by the caller, for replays. */
   async smAs(req, sub, ...args) {
     const from = this.log.length
-    this.send(['usher', sub, ...toSignalbox(sub, args), '--json', req].join(' '))
+    this.send(['sheriff', sub, ...toSignalbox(sub, args), '--json', req].join(' '))
     const line = await this.waitFor(new RegExp('\\]: ea-result ' + req.replace(/[.]/g, '\\.') + ' '), 30000, from)
     const hits = this.log.slice(from).filter(l => l.includes('ea-result ' + req + ' ')).length
     const raw = JSON.parse(line.slice(line.indexOf('{')))
     return { req, hits, line, raw, ...fromSignalbox(raw) }
   }
-  errors() { return this.log.filter(l => /Usher/.test(l) && /(ERROR|Exception|SEVERE)/.test(l)) }
+  errors() { return this.log.filter(l => /Sheriff/.test(l) && /(ERROR|Exception|SEVERE)/.test(l)) }
   async stop() {
     this.send('stop')
     const done = await Promise.race([this.exited.then(() => true), sleep(90000).then(() => false)])
@@ -174,7 +174,7 @@ function toSignalbox(sub, args) {
   return yes.length ? [...out, '--yes', yes.join(',')] : out
 }
 
-// Codes Usher answers as "error" (something failed) rather than "refused" (a rule said no).
+// Codes Sheriff answers as "error" (something failed) rather than "refused" (a rule said no).
 const ERRORS = new Set(['luckperms_failed', 'internal', 'log_failed', 'server_busy', 'whitelist_failed', 'busy'])
 /** A Signalbox answer in the shape the checks were written for. */
 function fromSignalbox(raw) {

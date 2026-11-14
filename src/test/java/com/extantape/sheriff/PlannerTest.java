@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,7 @@ class PlannerTest {
 
     @Test
     void aProfileThatGrantsAdminPowersIsRefused() {
-        store.perm("builders", "usher.approve");
+        store.perm("builders", "sheriff.approve");
         assertEquals("restricted", plan(store.user(), Set.of("builders"), Set.of(), Set.of()).refusal());
         store.perms.get("builders").clear();
         store.perm("default", "*");

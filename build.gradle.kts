@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.extantape"
-version = "0.4.1"
+version = "0.5.0"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(25))
@@ -48,17 +48,17 @@ tasks.test {
 }
 
 // Signalbox goes inside the jar, relocated, so it can never clash with another plugin's copy. The shaded jar is the
-// only one built, so the release workflow's Usher-*.jar finds exactly one.
+// only one built, so the release workflow's Sheriff-*.jar finds exactly one.
 tasks.shadowJar {
-    archiveBaseName.set("Usher")
+    archiveBaseName.set("Sheriff")
     archiveClassifier.set("")
     from("LICENSE")
-    relocate("com.extantape.signalbox", "com.extantape.usher.libs.signalbox")
+    relocate("com.extantape.signalbox", "com.extantape.sheriff.libs.signalbox")
 }
 tasks.jar { enabled = false }
 tasks.assemble { dependsOn(tasks.shadowJar) }
 
-// Test only: a tiny plugin that logs Usher's events, for the bot tests in test/. Never shipped.
+// Test only: a tiny plugin that logs Sheriff's events, for the bot tests in test/. Never shipped.
 val spy: SourceSet = sourceSets.create("spy") {
     java.srcDir("test/spy/java")
     resources.srcDir("test/spy/resources")
@@ -67,6 +67,6 @@ val spy: SourceSet = sourceSets.create("spy") {
 dependencies { "spyCompileOnly"(paperApi) }
 tasks.register<Jar>("spyJar") {
     from(spy.output)
-    archiveFileName.set("UsherSpy.jar")
+    archiveFileName.set("SheriffSpy.jar")
     destinationDirectory.set(layout.buildDirectory.dir("test-spy"))
 }

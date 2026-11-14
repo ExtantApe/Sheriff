@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -18,14 +18,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * /approve &lt;name&gt; and /profile &lt;name&gt; [edit], for admins in the game. Both need usher.approve, so
+ * /approve &lt;name&gt; and /profile &lt;name&gt; [edit], for admins in the game. Both need sheriff.approve, so
  * players without it don't see them at all.
  */
 final class PlayerCommands {
 
-    private final UsherPlugin plugin;
+    private final SheriffPlugin plugin;
 
-    PlayerCommands(UsherPlugin plugin) { this.plugin = plugin; }
+    PlayerCommands(SheriffPlugin plugin) { this.plugin = plugin; }
 
     /** One of the two commands, as Paper's BasicCommand. */
     final class Command implements BasicCommand {
@@ -55,11 +55,11 @@ final class PlayerCommands {
         }
         boolean edit = approve || args.length == 2;
         if (edit && !(sender instanceof Player)) {
-            sender.sendMessage(plain("The menu is for players. From the console, use: usher apply <request-id> <uuid> <name> +profile -profile"));
+            sender.sendMessage(plain("The menu is for players. From the console, use: sheriff apply <request-id> <uuid> <name> +profile -profile"));
             return;
         }
-        if (!plugin.settings().ok()) { sender.sendMessage(bad("Usher's config is broken, so it can't change anything right now. " + plugin.settings().problems().get(0))); return; }
-        if (!plugin.store().ready()) { sender.sendMessage(bad("LuckPerms isn't running, so Usher can't change anyone's profiles right now.")); return; }
+        if (!plugin.settings().ok()) { sender.sendMessage(bad("Sheriff's config is broken, so it can't change anything right now. " + plugin.settings().problems().get(0))); return; }
+        if (!plugin.store().ready()) { sender.sendMessage(bad("LuckPerms isn't running, so Sheriff can't change anyone's profiles right now.")); return; }
 
         sender.sendMessage(plain("Looking up " + args[0] + "…"));
         resolve(sender, args[0], who -> {

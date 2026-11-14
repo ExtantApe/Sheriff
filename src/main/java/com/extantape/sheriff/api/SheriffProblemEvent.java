@@ -1,4 +1,4 @@
-package com.extantape.usher.api;
+package com.extantape.sheriff.api;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -11,7 +11,7 @@ import java.util.UUID;
  * Fired on the main thread when something went wrong or was refused for safety: LuckPerms missing or failing, a broken
  * config, a restricted group, self-approval, or a change cut off by a crash.
  */
-public final class UsherProblemEvent extends Event {
+public final class SheriffProblemEvent extends Event {
     private static final HandlerList HANDLERS = new HandlerList();
 
     private final String code;
@@ -19,7 +19,7 @@ public final class UsherProblemEvent extends Event {
     private final @Nullable UUID target;
     private final @Nullable String actor;
 
-    public UsherProblemEvent(String code, String message, @Nullable UUID target, @Nullable String actor) {
+    public SheriffProblemEvent(String code, String message, @Nullable UUID target, @Nullable String actor) {
         this.code = code; this.message = message; this.target = target; this.actor = actor;
     }
 

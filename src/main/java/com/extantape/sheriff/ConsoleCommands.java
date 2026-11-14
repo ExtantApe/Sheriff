@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import com.extantape.signalbox.Answer;
 import com.extantape.signalbox.Args;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
- * /usher: console commands for Leaf Juice, scripts and people. With {@code --json <id>} each answers with exactly one
+ * /sheriff: console commands for Leaf Juice, scripts and people. With {@code --json <id>} each answers with exactly one
  * Signalbox line, {@code ea-result <id> <json>}, which may come a moment later; without it, in plain words. Changes that
  * need a yes answer with the questions and change nothing; send them again with {@code --yes id,id}. See the README.
  */
@@ -40,9 +40,9 @@ final class ConsoleCommands implements BasicCommand {
     private static final Pattern VIA = Pattern.compile("[a-z0-9-]{1,32}");
     static final int MAX_LIMIT = 100;
 
-    private final UsherPlugin plugin;
+    private final SheriffPlugin plugin;
 
-    ConsoleCommands(UsherPlugin plugin) { this.plugin = plugin; }
+    ConsoleCommands(SheriffPlugin plugin) { this.plugin = plugin; }
 
     /** The console, and approvers in the game (who only get reload). Hidden from everyone else. */
     @Override
@@ -79,7 +79,7 @@ final class ConsoleCommands implements BasicCommand {
         List<String> t = r.tokens();
         if (t.isEmpty()) {
             if (r.json()) fail(sender, r.id(), Errors.UNKNOWN_COMMAND, "Give a command: " + String.join(", ", SUBS) + ".");
-            else sender.sendMessage("Usher " + plugin.getPluginMeta().getVersion() + ": " + String.join(", ", SUBS) + ". See the README for details.");
+            else sender.sendMessage("Sheriff " + plugin.getPluginMeta().getVersion() + ": " + String.join(", ", SUBS) + ". See the README for details.");
             return;
         }
         String sub = t.get(0).toLowerCase(Locale.ROOT);
@@ -105,8 +105,8 @@ final class ConsoleCommands implements BasicCommand {
                 case "log" -> log(sender, r, rest);
                 case "describe" -> {
                     none(rest);
-                    if (r.json()) send(sender, Answer.ok(r.id(), Describe.body("Usher", plugin.getPluginMeta().getVersion(), described())));
-                    else for (Describe.Command d : described()) sender.sendMessage("usher " + d.name());
+                    if (r.json()) send(sender, Answer.ok(r.id(), Describe.body("Sheriff", plugin.getPluginMeta().getVersion(), described())));
+                    else for (Describe.Command d : described()) sender.sendMessage("sheriff " + d.name());
                 }
                 default -> fail(sender, r.id(), Errors.UNKNOWN_COMMAND, "Unknown: " + sub + ". Try " + String.join(", ", SUBS) + ".");
             }
@@ -161,7 +161,7 @@ final class ConsoleCommands implements BasicCommand {
     // --- resolve and show ---
 
     private void resolve(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
-        if (rest.size() != 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: usher resolve <name>");
+        if (rest.size() != 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: sheriff resolve <name>");
         String typed = Args.player(rest.get(0));
         plugin.names().resolve(typed, plugin.settings().lookup()).whenComplete((who, e) -> {
             if (e != null) { nameFail(sender, r, e, typed); return; }
@@ -190,7 +190,7 @@ final class ConsoleCommands implements BasicCommand {
     }
 
     private void show(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
-        if (rest.size() != 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: usher show <uuid or name>");
+        if (rest.size() != 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: sheriff show <uuid or name>");
         if (!plugin.store().ready()) throw new Refusal("luckperms-missing", "LuckPerms isn't running.");
         String typed = Args.player(rest.get(0));
         UUID id = typed.contains("-") ? UUID.fromString(typed) : null;
@@ -233,7 +233,7 @@ final class ConsoleCommands implements BasicCommand {
 
     static ApplyArgs parseApply(List<String> rest) throws Request.Bad, Refusal {
         if (rest.size() < 4 || rest.size() > 6)
-            throw new Refusal(Errors.BAD_ARGUMENT, "Use: usher apply <uuid> <name> <add|none> <remove|none> [whitelist true|false] [via]");
+            throw new Refusal(Errors.BAD_ARGUMENT, "Use: sheriff apply <uuid> <name> <add|none> <remove|none> [whitelist true|false] [via]");
         UUID id = Args.uuid(rest.get(0));
         String name = rest.get(1);
         if (!NameResolver.possibleName(name)) throw new Refusal(Errors.BAD_ARGUMENT, "\"" + name + "\" can't be a Minecraft name.");
@@ -257,10 +257,10 @@ final class ConsoleCommands implements BasicCommand {
 
     private void apply(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
         ApplyArgs a = parseApply(rest);
-        Set<String> confirmed = LatchkeyHook.confirmedCodes(plugin.settings(), r.yes());
+        Set<String> confirmed = WelcomeWagonHook.confirmedCodes(plugin.settings(), r.yes());
         var request = new ChangeService.Request(r.id(), ChangeService.Actor.console(a.via()), a.uuid(), a.name(), a.add(), a.remove(), confirmed, a.whitelist());
         plugin.changes().submit(request).whenComplete((result, e) -> plugin.runMain(() -> {
-            if (e != null || result == null) { fail(sender, r.id(), Errors.INTERNAL, "Something went wrong inside Usher. See the server log."); return; }
+            if (e != null || result == null) { fail(sender, r.id(), Errors.INTERNAL, "Something went wrong inside Sheriff. See the server log."); return; }
             answer(sender, r, result);
         }));
     }
@@ -275,7 +275,7 @@ final class ConsoleCommands implements BasicCommand {
             }
             case "warn" -> {
                 List<Confirm.Question> qs = new ArrayList<>();
-                for (Planner.Warning w : result.warnings()) qs.add(new Confirm.Question(LatchkeyHook.toYesId(w.code()), w.text()));
+                for (Planner.Warning w : result.warnings()) qs.add(new Confirm.Question(WelcomeWagonHook.toYesId(w.code()), w.text()));
                 if (r.json()) send(sender, Answer.needs(r.id(), qs));
                 else {
                     sender.sendMessage(result.message());
@@ -290,7 +290,7 @@ final class ConsoleCommands implements BasicCommand {
     // --- attempts and log ---
 
     private void attempts(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
-        if (rest.size() > 2) throw new Refusal(Errors.BAD_ARGUMENT, "Use: usher attempts [limit] [cursor]");
+        if (rest.size() > 2) throw new Refusal(Errors.BAD_ARGUMENT, "Use: sheriff attempts [limit] [cursor]");
         int limit = rest.isEmpty() ? 50 : Args.integer(rest.get(0));
         int cursor = rest.size() < 2 ? 0 : cursorOf(rest.get(1));
         if (limit < 1 || limit > MAX_LIMIT || cursor < 0) throw new Refusal(Errors.BAD_ARGUMENT, "limit is 1 to " + MAX_LIMIT + " and cursor 0 or more.");
@@ -316,7 +316,7 @@ final class ConsoleCommands implements BasicCommand {
     }
 
     private void log(CommandSender sender, Request r, List<String> rest) throws Request.Bad, Refusal {
-        if (rest.size() > 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: usher log [limit]");
+        if (rest.size() > 1) throw new Refusal(Errors.BAD_ARGUMENT, "Use: sheriff log [limit]");
         int count = rest.isEmpty() ? 20 : Args.integer(rest.get(0));
         if (count < 1 || count > MAX_LIMIT) throw new Refusal(Errors.BAD_ARGUMENT, "limit is 1 to " + MAX_LIMIT + ".");
         if (plugin.audit() == null) throw new Refusal("log-failed", "changes.log can't be opened.");
@@ -336,7 +336,7 @@ final class ConsoleCommands implements BasicCommand {
 
     /** The cursor a page handed out: a string to the caller, a position here. Anything else is refused. */
     static int cursorOf(String token) throws Refusal {
-        if (!token.matches("\\d{1,9}")) throw new Refusal(Errors.BAD_ARGUMENT, "That cursor isn't one Usher handed out. Use the next value from the last page.");
+        if (!token.matches("\\d{1,9}")) throw new Refusal(Errors.BAD_ARGUMENT, "That cursor isn't one Sheriff handed out. Use the next value from the last page.");
         return Integer.parseInt(token);
     }
 

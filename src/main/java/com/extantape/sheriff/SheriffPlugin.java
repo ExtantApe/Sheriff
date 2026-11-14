@@ -1,6 +1,6 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
-import com.extantape.usher.api.UsherProblemEvent;
+import com.extantape.sheriff.api.SheriffProblemEvent;
 import com.google.gson.JsonObject;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public final class UsherPlugin extends JavaPlugin {
+public final class SheriffPlugin extends JavaPlugin {
 
     private volatile Settings settings = Settings.broken("not loaded yet");
     private volatile GroupStore store = new LuckPermsStore.Missing();
@@ -32,7 +32,6 @@ public final class UsherPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        migrateFromStationmaster();
         saveDefaultConfig();
         settings = readSettings();
         report(settings);
@@ -40,7 +39,7 @@ public final class UsherPlugin extends JavaPlugin {
         try {
             audit = new AuditLog(getDataFolder().toPath().resolve("changes.log"));
         } catch (IOException e) {
-            getLogger().log(Level.SEVERE, "Can't open changes.log, so Usher will refuse every change", e);
+            getLogger().log(Level.SEVERE, "Can't open changes.log, so Sheriff will refuse every change", e);
             settings = Settings.broken("changes.log can't be opened");
             audit = null;
         }
@@ -58,7 +57,7 @@ public final class UsherPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(attempts, this);
         getServer().getPluginManager().registerEvents(access, this);
         getServer().getPluginManager().registerEvents(menus, this);
-        LatchkeyHook.register(this);
+        WelcomeWagonHook.register(this);
 
         PlayerCommands players = new PlayerCommands(this);
         ConsoleCommands console = new ConsoleCommands(this);
@@ -66,7 +65,7 @@ public final class UsherPlugin extends JavaPlugin {
             var commands = event.registrar();
             commands.register("approve", "Let someone in and choose their profiles.", players.approve());
             commands.register("profile", "See or change someone's profiles.", players.profile());
-            commands.register("usher", "Console commands for Leaf Juice and scripts, and reload.", console);
+            commands.register("sheriff", "Console commands for Leaf Juice and scripts, and reload.", console);
         });
 
         // After startup, so listeners from other plugins hear about problems.
@@ -74,7 +73,7 @@ public final class UsherPlugin extends JavaPlugin {
             checkProfilesAgainstLuckPerms();
             if (!settings.ok()) callProblem("config_broken", settings.problems().get(0));
             else for (String p : settings.problems()) callProblem("config_problem", p);
-            if (!store.ready()) callProblem("luckperms_missing", "LuckPerms isn't running, so Usher can't change anyone's profiles.");
+            if (!store.ready()) callProblem("luckperms_missing", "LuckPerms isn't running, so Sheriff can't change anyone's profiles.");
             if (audit != null) recoverUnfinished();
         });
     }
@@ -87,7 +86,7 @@ public final class UsherPlugin extends JavaPlugin {
 
     private GroupStore connectLuckPerms() {
         if (!getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
-            getLogger().severe("LuckPerms isn't running. Usher will load, but it will refuse every change until LuckPerms works.");
+            getLogger().severe("LuckPerms isn't running. Sheriff will load, but it will refuse every change until LuckPerms works.");
             return new LuckPermsStore.Missing();
         }
         try {
@@ -96,7 +95,7 @@ public final class UsherPlugin extends JavaPlugin {
         } catch (Throwable e) {
             getLogger().log(Level.SEVERE, "Couldn't reach LuckPerms' API", e);
         }
-        getLogger().severe("LuckPerms is loaded but its API isn't available, so Usher will refuse every change.");
+        getLogger().severe("LuckPerms is loaded but its API isn't available, so Sheriff will refuse every change.");
         return new LuckPermsStore.Missing();
     }
 
@@ -115,7 +114,7 @@ public final class UsherPlugin extends JavaPlugin {
         if (!fresh.ok()) {
             report(fresh);
             callProblem("config_broken", fresh.problems().get(0));
-            return List.of("Couldn't reload: " + fresh.problems().get(0), settings.ok() ? "Still using the settings from before." : "Usher still refuses every change until config.yml is fixed.");
+            return List.of("Couldn't reload: " + fresh.problems().get(0), settings.ok() ? "Still using the settings from before." : "Sheriff still refuses every change until config.yml is fixed.");
         }
         settings = fresh;
         report(fresh);
@@ -128,7 +127,7 @@ public final class UsherPlugin extends JavaPlugin {
     }
 
     private void report(Settings s) {
-        if (!s.ok()) getLogger().severe(s.problems().get(0) + " Usher will refuse every change until it's fixed.");
+        if (!s.ok()) getLogger().severe(s.problems().get(0) + " Sheriff will refuse every change until it's fixed.");
         else for (String p : s.problems()) getLogger().warning(p);
     }
 
@@ -141,7 +140,7 @@ public final class UsherPlugin extends JavaPlugin {
             String why = Planner.unsafe(settings, store, p);
             if (why == null) { keep.put(p.id(), p); continue; }
             String line = "Profile " + p.id() + " is left out: " + why.replace(" Nothing was changed.", "").replace(", so nothing was changed.", ".")
-                    + (why.contains("doesn't exist") ? " Create the group, then run usher reload." : "");
+                    + (why.contains("doesn't exist") ? " Create the group, then run sheriff reload." : "");
             problems.add(line);
             getLogger().warning(line);
             callProblem(why.contains("doesn't exist") ? "config_problem" : "restricted", line);
@@ -197,7 +196,7 @@ public final class UsherPlugin extends JavaPlugin {
     }
 
     void callProblem(String code, String message) {
-        Bukkit.getPluginManager().callEvent(new UsherProblemEvent(code, message, null, null));
+        Bukkit.getPluginManager().callEvent(new SheriffProblemEvent(code, message, null, null));
     }
 
     void runMain(Runnable r) {
@@ -215,17 +214,4 @@ public final class UsherPlugin extends JavaPlugin {
     ChangeService changes() { return changes; }
     NameResolver names() { return names; }
     PickerMenus menus() { return menus; }
-
-
-    /**
-     * The plugin was called Stationmaster before 0.3.0. If plugins/Usher doesn't exist yet and plugins/Stationmaster
-     * does, copy it across (config, changes.log, join-attempts.json) so nothing is lost. The old folder is left as it
-     * was, as a backup. Nothing is overwritten: if plugins/Usher exists, this does nothing.
-     */
-    private void migrateFromStationmaster() {
-        Path now = getDataFolder().toPath();
-        Path old = now.resolveSibling("Stationmaster");
-        String done = Migration.copyIfMissing(old, now);
-        if (done != null) getLogger().warning(done);
-    }
 }

@@ -1,14 +1,14 @@
-package com.extantape.usher.spy;
+package com.extantape.sheriff.spy;
 
-import com.extantape.usher.api.JoinAttemptEvent;
-import com.extantape.usher.api.ProfilesChangedEvent;
-import com.extantape.usher.api.UsherProblemEvent;
+import com.extantape.sheriff.api.JoinAttemptEvent;
+import com.extantape.sheriff.api.ProfilesChangedEvent;
+import com.extantape.sheriff.api.SheriffProblemEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Test only: prints every Usher event as one SPY line, the way a Discord bridge would see it. */
+/** Test only: prints every Sheriff event as one SPY line, the way a Discord bridge would see it. */
 public final class SpyPlugin extends JavaPlugin implements Listener {
     @Override public void onEnable() { getServer().getPluginManager().registerEvents(this, this); }
 
@@ -22,7 +22,7 @@ public final class SpyPlugin extends JavaPlugin implements Listener {
         getLogger().info("SPY attempt name=" + e.getName() + " uuid=" + e.getAccount() + " count=" + e.getAttempts() + " main=" + Bukkit.isPrimaryThread());
     }
 
-    @EventHandler public void on(UsherProblemEvent e) {
+    @EventHandler public void on(SheriffProblemEvent e) {
         getLogger().info("SPY problem code=" + e.getCode() + " main=" + Bukkit.isPrimaryThread() + " message=" + e.getMessage());
     }
 }

@@ -1,4 +1,4 @@
-package com.extantape.usher.api;
+package com.extantape.sheriff.api;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

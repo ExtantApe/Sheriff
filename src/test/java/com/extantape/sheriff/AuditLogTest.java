@@ -1,4 +1,4 @@
-package com.extantape.usher;
+package com.extantape.sheriff;
 
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
