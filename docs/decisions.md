@@ -41,3 +41,7 @@ Decisions the owner made for Stationmaster, with dates. Follow them without aski
 ## 2026-11-14
 
 - **Name (owner, D194):** the plugin is renamed Sheriff. The owner chose "Sheriff (Recommended)", and asked that no old names be kept: no aliases, no old permissions and no folder copy. Released as 0.5.0.
+
+## 2026-11-26
+
+- **Names that differ only in capitals (owner, 2026-11-25, "Yes, offline too (Recommended)", K755 and K763):** on an offline-mode server Sheriff refuses to approve a name that matches a whitelisted name apart from capital letters. The refusal names the existing entry and says how to fix it. It applies to anyone not yet on the whitelist, with or without the whitelist step, and a whitelist whose names can't all be read refuses too. Released as 0.5.1.

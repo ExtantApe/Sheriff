@@ -8,13 +8,15 @@
 //   SHERIFF_TEST_PAPER  26.1.2 (default), 26.2 or 26.3
 //   SHERIFF_TEST_JAVA   a Java 25 to run Paper with
 //   SHERIFF_TEST_STORAGE  LuckPerms storage: yaml (default) or h2
+//   SHERIFF_TEST_PORT   the port the server listens on, 127.0.0.1 only. 25615 unless set.
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, writeFileSync, copyFileSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import mineflayer from 'mineflayer'
 
-export const PORT = 25615
+export const PORT = Number(process.env.SHERIFF_TEST_PORT ?? 25615)
+if (!Number.isInteger(PORT) || PORT < 1024 || PORT > 65535) throw new Error('SHERIFF_TEST_PORT must be a port from 1024 to 65535, not ' + process.env.SHERIFF_TEST_PORT)
 export const PAPER = process.env.SHERIFF_TEST_PAPER ?? '26.1.2'
 // mineflayer speaks up to 26.1, so on newer servers the bots join through ViaVersion and ViaBackwards.
 export const BOT_VERSION = '26.1'

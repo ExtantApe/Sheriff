@@ -2,6 +2,25 @@
 
 Kept by this repo's owning session (Minecraft: Plugins Lead), per `~/Code/CLAUDE.md`, "Test self-audits". Newest first.
 
+## 2026-11-26: after 0.5.1
+
+Only the new promise was audited. The earlier tables still stand.
+
+| Promise | Covered by |
+| --- | --- |
+| **On an offline-mode server, a name that matches a whitelisted one apart from capitals is refused, from the console** | **new** unit `aNameThatDiffersOnlyInCapitalsIsRefused`, `capitalsAreComparedTheSameWayInEveryLocale`; live "adding pebblefox from the console is refused as a name clash", "profiles alone are refused for such a name too" |
+| **And in the game, before a menu opens** | **new** live "/approve pebblefox is refused in chat, naming PebbleFox and the fix, with no menu", with the control "/approve for a name that clashes with nobody opens the menu" |
+| **The refusal names the existing entry and the fix** | **new** unit `theRefusalNamesTheExistingEntryAndSaysHowToFixIt`, `withSeveralClashesTheSameOneIsNamedEveryTime`; live "the refusal names the entry it clashes with", "and says how to fix it, and that nothing changed", "after /whitelist remove of the old spelling, the new one is approved" |
+| **Nothing changes on a refusal, and the name stays out** | **new** live "pebblefox is not on the whitelist", "and got no profile", "pebblefox is turned away at the door", "both refusals are in changes.log", "a problem event fired for it, on the main thread" |
+| **Fails closed when a name can't be compared** | **new** unit `anEntryWithoutANameRefusesBecauseItCannotBeCompared` |
+| **The exact spelling and other names still work** | **new** unit `theExactSpellingAndOtherNamesPass`; live controls for PebbleFox, Pebble_Fox and fernheron |
+
+**Gaps added this audit:** all of the above. The bot suite passed 131/131 on Paper 26.1.2, 26.2 and 26.3.
+
+**Skipped, with reasons:**
+- The check being skipped in online mode: the bots can't join an online-mode server, and the condition is one line (`Bukkit.getOnlineMode()`).
+- A nameless whitelist entry or an unreadable whitelist on a running server: staging it means hand-breaking `whitelist.json`, and what Paper does with such a file wasn't looked into. The unit test covers the decision.
+
 ## 2026-11-10: after 0.3.1, 0.4.0 and 0.4.1
 
 

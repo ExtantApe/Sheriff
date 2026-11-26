@@ -2,7 +2,7 @@
 
 A Paper plugin for whitelisted servers. Admins approve a new player and choose their profiles, and Sheriff sets their whitelist entry and LuckPerms groups. Nobody types LuckPerms commands.
 
-**Status:** pre-release. It passes its bot tests on throwaway Paper 26.1.2, 26.2 and 26.3 servers with LuckPerms and Multiverse. It hasn't been used on a real server or seen in a real game client yet. See [Testing](#testing).
+**Status:** pre-release. It passes its bot tests on throwaway Paper 26.1.2, 26.2 and 26.3 servers with LuckPerms and Multiverse (0.5.1: 131 checks each, 2026-11-26). It hasn't been used on a real server or seen in a real game client yet. See [Testing](#testing).
 
 - Paper 26.1 or newer, on Java 25. There's no support for 1.21.x.
 - Needs LuckPerms. Without it, Sheriff still loads but refuses every change and says why.
@@ -36,6 +36,7 @@ There are three ways to do it:
   - grants `sheriff.approve` or LuckPerms editing.
   These checks run at startup and again on every change, so they still hold if a group changes after a menu opens.
 - Adding a profile that puts someone in two chat circles at once (see `circle` in the config) asks for a yes first. A profile with a `confirm` question, such as an adults-only world, does too. A yes to one question doesn't cover another.
+- On an offline-mode server, a name that matches a whitelisted name apart from capital letters is refused, because the two spellings would be two separate players there. The refusal names the existing entry and says how to fix it. If Sheriff can't read the whitelist's names, it refuses.
 - Changes run one at a time. Two admins editing the same person both get their change. If both add the same profile, it's added once.
 - Nothing is changed until Approve or Save is pressed. Closing the menu cancels. Every click in the menu is cancelled, so no item can be taken out.
 - The menu says whether the account has played here, has tried to join, or has never tried. An account that has never tried gets a warning, so a mistyped name that belongs to a stranger is easy to spot.
@@ -81,6 +82,8 @@ A config that can't be read at startup makes Sheriff refuse every change until i
 3. Mojang's public profile lookup, in online or `mojang` mode.
 
 A typo fails with "No Minecraft account is called …". If Mojang can't be reached, Sheriff says that instead of guessing, and nothing changes. In `offline` mode, capitals matter for names the server hasn't seen, because offline accounts are built from the exact name.
+
+So on an offline-mode server Sheriff won't approve `pebblefox` while `PebbleFox` is on the whitelist. The answer says which entry it matches and what to do: the same person joins under the existing spelling, someone else picks a different name, and `/whitelist remove` on the old spelling comes first if the spelling itself should change. From the console the code is `name-clash`. Someone already on the whitelist can still have their profiles changed.
 
 ## Commands
 
@@ -134,7 +137,7 @@ Sheriff sends nothing over the network itself, apart from name lookups to Mojang
 | --- | --- |
 | `com.extantape.sheriff.api.ProfilesChangedEvent` | Someone was approved or their profiles changed. It has who, by whom, how, what was added and removed, and any warnings said yes to. |
 | `com.extantape.sheriff.api.JoinAttemptEvent` | Someone not on the whitelist tried to join. At most once every ten minutes per account. |
-| `com.extantape.sheriff.api.SheriffProblemEvent` | LuckPerms missing or failing, a config problem, a refused restricted group, self-approval, or a change cut off by a crash. |
+| `com.extantape.sheriff.api.SheriffProblemEvent` | LuckPerms missing or failing, a config problem, a refused restricted group, self-approval, a name that clashes with a whitelisted one, or a change cut off by a crash. |
 
 ## If the server stops mid-change
 
@@ -144,7 +147,7 @@ Each change writes a `started` line to `changes.log` before LuckPerms is touched
 
 `./gradlew build` runs the unit tests: config parsing, the safety rules, the warnings and the change log's crash handling.
 
-The bot tests in `test/` build fresh Paper servers in a temp folder, on 127.0.0.1 port 25615. Each has LuckPerms, Multiverse-Core, Multiverse-Inventories, made-up worlds and groups, and mineflayer bots as players. Every result that says "blocked" has a check beside it showing the same thing works when it should. See the top of `test/harness.mjs` for setup, then run `node test/acceptance.mjs`. It runs one server at a time and deletes it when the run ends. Set `SHERIFF_TEST_KEEP=1` to keep it for a look. LuckPerms uses YAML storage unless `SHERIFF_TEST_STORAGE=h2`.
+The bot tests in `test/` build fresh Paper servers in a temp folder, on 127.0.0.1 port 25615, or the port in `SHERIFF_TEST_PORT`. Each has LuckPerms, Multiverse-Core, Multiverse-Inventories, made-up worlds and groups, and mineflayer bots as players. Every result that says "blocked" has a check beside it showing the same thing works when it should. See the top of `test/harness.mjs` for setup, then run `node test/acceptance.mjs`. It runs one server at a time and deletes it when the run ends. Set `SHERIFF_TEST_KEEP=1` to keep it for a look. LuckPerms uses YAML storage unless `SHERIFF_TEST_STORAGE=h2`.
 
 **Passed on Paper 26.1.2, 26.2 and 26.3 (2026-11-07), 100 checks each:**
 
@@ -160,6 +163,8 @@ The bot tests in `test/` build fresh Paper servers in a temp folder, on 127.0.0.
 - Restarts, a broken config at reload and at startup, `kill -9` before and after the LuckPerms save, LuckPerms unable to save (a read-only storage folder), and LuckPerms missing.
 - The three events fire, on the main thread, as expected.
 
+**0.5.1, passed on Paper 26.1.2, 26.2 and 26.3 (2026-11-26), 131 checks each:** the same suite, plus names that differ only in capitals on these offline-mode servers. A clashing name is refused from the console and in the game, the message names the existing entry and the fix, the whitelist and profiles stay as they were, the refused name can't join, and the exact spelling and a different name still work.
+
 **Also passed with LuckPerms on H2 storage, on Paper 26.2 and 26.3 (2026-11-08), 96 checks each:** the same suite, which first checks that LuckPerms really created an H2 database. The four checks for LuckPerms being unable to save are skipped on H2. They work by making YAML's folder read-only, and H2 keeps its database file open, so it can't be made to fail that way.
 
 **How the bots connect:** mineflayer speaks up to 26.1, so on 26.1.2 the bots are native clients. On 26.2 and 26.3 they join as 26.1 clients through ViaVersion and ViaBackwards. Through ViaBackwards (5.12.2 and the 5.12.3 dev build), a 26.1 bot's movement packets get it kicked for "invalid player movement". So on those servers the bots don't send movement. Every teleport in the tests is done by the server, so nothing the tests check depends on it.
@@ -168,7 +173,9 @@ The bot tests in `test/` build fresh Paper servers in a temp folder, on 127.0.0.
 
 - How the menu's new symbols, colours and hints look in a real client. The bots check which items are where, not how they read.
 - A real game client: whether the menu is clear and pleasant for a non-technical admin, and whether the messages read well.
-- Mojang name lookups on a real online-mode server. The tests run offline-mode servers.
+- Mojang name lookups on a real online-mode server. The tests run offline-mode servers, so the capitals check being skipped in online mode is unproven by a bot.
+- A whitelist entry with no name on a running server. Unit tests cover that refusal.
+- H2 storage with 0.5.1.
 - Leaf Juice itself. Its screen belongs to Leaf Juice; these tests drive the same console commands directly.
 - Waystation gates appearing or disappearing when a profile changes. Waystation decides that from `multiverse.access.<world>`, which LuckPerms changes at once, but no test has watched a gate do it.
 - A Discord bridge. The events were checked with a small test plugin that logs them.

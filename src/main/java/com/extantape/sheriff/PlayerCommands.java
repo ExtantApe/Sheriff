@@ -67,6 +67,17 @@ final class PlayerCommands {
                 sender.sendMessage(bad("You can't approve yourself or change your own profiles. Ask another admin."));
                 return;
             }
+            // Said before the menu opens, so nobody picks profiles for a name that will be refused. ChangeService
+            // checks again when the change is made, and that check is the one that counts.
+            if (edit && !Bukkit.getOnlineMode()) {
+                String typed = args[0];
+                NameClash.Refusal clash = null;
+                if (!Bukkit.getOfflinePlayer(who.id()).isWhitelisted()) clash = ChangeService.nameClash(who.name());
+                // The lookup found someone already approved under another spelling. Approving is for someone new, so
+                // say so, and leave the menu shut: otherwise the admin would edit that player while meaning a new one.
+                else if (approve && !who.name().equals(typed)) clash = new NameClash.Refusal("name_clash", NameClash.clashText(typed, who.name()));
+                if (clash != null) { sender.sendMessage(bad(clash.message())); return; }
+            }
             plugin.store().load(who.id(), who.name()).orTimeout(30, TimeUnit.SECONDS).whenComplete((state, error) -> plugin.runMain(() -> {
                 if (error != null) {
                     sender.sendMessage(bad("LuckPerms couldn't load " + who.name() + "'s groups, so nothing can be changed right now."));
