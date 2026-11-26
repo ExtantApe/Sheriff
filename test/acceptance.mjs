@@ -395,6 +395,64 @@ try {
   kicked = await join('Stranger2').then(() => false, () => true)
   check('strangers still can\'t join after all this', kicked)
 
+  // ---------- Names that differ only in capitals ----------
+  // This server is in offline mode, where PebbleFox and pebblefox would be two separate players.
+  console.log('\n# Names that differ only in capitals (offline mode)')
+  await s.ask('whitelist add PebbleFox', 600)
+  check('control: PebbleFox is on the whitelist, added the ordinary way', whitelist().some(e => e.name === 'PebbleFox'))
+  from = s.log.length
+  const logBefore = changesLog().length
+  const clash = await s.sm('apply', offlineUuid('pebblefox'), 'pebblefox', '+builders')
+  check('adding pebblefox from the console is refused as a name clash', clash.status === 'refused' && clash.code === 'name_clash', JSON.stringify(clash.raw).slice(0, 200))
+  check('the refusal names the entry it clashes with', /^pebblefox matches PebbleFox, who is already on the whitelist/.test(clash.message ?? ''), clash.message)
+  check('and says how to fix it, and that nothing changed', /Nothing was changed\./.test(clash.message ?? '') && /they join as PebbleFox/.test(clash.message ?? '')
+    && /\/whitelist remove PebbleFox/.test(clash.message ?? ''), clash.message)
+  check('pebblefox is not on the whitelist', !whitelist().some(e => e.name === 'pebblefox' || e.uuid === offlineUuid('pebblefox')), JSON.stringify(whitelist().map(e => e.name)))
+  check('and got no profile', same(await profilesOf(offlineUuid('pebblefox')), []))
+  const clashNoList = await s.sm('apply', offlineUuid('PEBBLEFOX'), 'PEBBLEFOX', '+builders', 'whitelist=no')
+  check('profiles alone are refused for such a name too', clashNoList.status === 'refused' && clashNoList.code === 'name_clash' && same(await profilesOf(offlineUuid('PEBBLEFOX')), []), JSON.stringify(clashNoList.raw).slice(0, 200))
+  const refusedLines = changesLog().slice(logBefore).filter(e => e.event === 'refused' && e.result?.code === 'name_clash')
+  check('both refusals are in changes.log', refusedLines.length === 2 && refusedLines[0].target === 'pebblefox', JSON.stringify(refusedLines).slice(0, 200))
+  await sleep(500)
+  check('a problem event fired for it, on the main thread', spy(from, /SPY problem code=name_clash main=true/).length === 2, spy(from, /problem/).join(' | '))
+  kicked = await join('pebblefox').then(() => false, () => true)
+  check('pebblefox is turned away at the door', kicked)
+
+  // In the game: the admin is told before any menu opens, or is shown the entry that already exists.
+  adminA.chat_log.length = 0
+  let clashMenu = null
+  const onClashMenu = w2 => { clashMenu = w2 }
+  adminA.on('windowOpen', onClashMenu)
+  adminA.chat('/approve pebblefox'); await sleep(2500)
+  adminA.removeListener('windowOpen', onClashMenu)
+  const toldInChat = adminA.chat_log.some(m => /pebblefox matches PebbleFox, who is already on the whitelist/.test(m) && /\/whitelist remove PebbleFox/.test(m))
+  check('/approve pebblefox is refused in chat, naming PebbleFox and the fix, with no menu', toldInChat && clashMenu === null,
+    adminA.chat_log.join(' | ') + ' menu=' + JSON.stringify(clashMenu?.title ?? null))
+  w = await openMenu(adminA, '/approve MossyOwl')
+  check('control: /approve for a name that clashes with nobody opens the menu', /MossyOwl/.test(JSON.stringify(adminA.currentWindow?.title ?? '')), JSON.stringify(adminA.currentWindow?.title))
+  await click(adminA, SLOT.CANCEL); await sleep(500)
+  check('and pebblefox is still not on the whitelist', !whitelist().some(e => e.name.toLowerCase() === 'pebblefox' && e.name !== 'PebbleFox'), JSON.stringify(whitelist().map(e => e.name)))
+  kicked = await join('pebblefox').then(() => false, () => true)
+  check('and still can\'t join', kicked)
+
+  // Positive controls: the same commands work when no name clashes.
+  const exact = await s.sm('apply', offlineUuid('PebbleFox'), 'PebbleFox', '+builders')
+  check('control: the exact spelling, PebbleFox, can be given a profile', exact.status === 'ok' && same(await profilesOf('PebbleFox'), ['builders']), JSON.stringify(exact.raw).slice(0, 200))
+  const other = await s.sm('apply', offlineUuid('Pebble_Fox'), 'Pebble_Fox', '+builders')
+  check('control: a different name, Pebble_Fox, is approved', other.status === 'ok' && other.newlyWhitelisted === true && whitelist().some(e => e.name === 'Pebble_Fox'), JSON.stringify(other.raw).slice(0, 200))
+  const pf = await join('PebbleFox').then(() => true, e => e.message)
+  check('control: PebbleFox can join', pf === true, String(pf))
+
+  // The fix the message gives: take the old spelling off, then the new one goes on.
+  await s.ask('whitelist add FernHeron', 600)
+  const fernBefore = await s.sm('apply', offlineUuid('fernheron'), 'fernheron', 'whitelist=yes')
+  await s.ask('whitelist remove FernHeron', 600)
+  const fernAfter = await s.sm('apply', offlineUuid('fernheron'), 'fernheron', 'whitelist=yes')
+  check('after /whitelist remove of the old spelling, the new one is approved', fernBefore.code === 'name_clash' && fernAfter.status === 'ok' && fernAfter.newlyWhitelisted === true
+    && whitelist().some(e => e.name === 'fernheron') && !whitelist().some(e => e.name === 'FernHeron'), JSON.stringify([fernBefore.code, fernAfter.raw]).slice(0, 200))
+  const fh = await join('fernheron').then(() => true, e => e.message)
+  check('and fernheron can join', fh === true, String(fh))
+
   // ---------- Restart ----------
   console.log('\n# Restart')
   await Promise.all(bots.map(b => quit(b)))

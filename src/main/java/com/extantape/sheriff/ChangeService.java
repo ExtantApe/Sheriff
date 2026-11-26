@@ -100,7 +100,13 @@ public final class ChangeService {
                 if (admin == null || !mayApprove(admin)) return new String[]{"not_permitted", "You don't have permission to approve people or change profiles."};
                 if (admin.getUniqueId().equals(r.target())) return new String[]{"self", "You can't approve yourself or change your own profiles. Ask another admin."};
             }
-            return new String[]{null, Boolean.toString(Bukkit.getOfflinePlayer(r.target()).isWhitelisted())};
+            boolean listed = Bukkit.getOfflinePlayer(r.target()).isWhitelisted();
+            // Someone new on an offline server: their name must not match a whitelisted one apart from capitals.
+            if (!listed && !Bukkit.getOnlineMode()) {
+                NameClash.Refusal clash = nameClash(r.targetName());
+                if (clash != null) return new String[]{clash.code(), clash.message()};
+            }
+            return new String[]{null, Boolean.toString(listed)};
         });
         if (pre == null) return result(r, "error", "server_busy", "The server didn't respond in time, so nothing was changed.", List.of(), null, false, false);
         if (pre[0] != null) return refuse(r, pre[0], pre[1]);
@@ -168,6 +174,21 @@ public final class ChangeService {
         res.json().add("groupsNow", strings(after.direct()));
         log(audit, entry(r, seq, "done", plan, settings, res));
         return res;
+    }
+
+    /**
+     * The whitelist's verdict on a new name, for an offline-mode server. Main thread only. If the whitelist can't be
+     * read, the answer is a refusal, so a failed check never lets a name through.
+     */
+    static NameClash.Refusal nameClash(String name) {
+        try {
+            List<String> names = new ArrayList<>();
+            for (OfflinePlayer listed : Bukkit.getWhitelistedPlayers()) names.add(listed.getName());
+            return NameClash.check(name, names);
+        } catch (RuntimeException e) {
+            Bukkit.getLogger().log(Level.WARNING, "[Sheriff] Couldn't read the whitelist to check " + name, e);
+            return NameClash.unchecked(name);
+        }
     }
 
     private Result refuse(Request r, String code, String message) {
