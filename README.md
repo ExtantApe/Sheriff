@@ -38,14 +38,14 @@ There are three ways to do it:
 - Adding a profile that puts someone in two chat circles at once (see `circle` in the config) asks for a yes first. A profile with a `confirm` question, such as an adults-only world, does too. A yes to one question doesn't cover another.
 - On an offline-mode server, a name that matches a whitelisted name apart from capital letters is refused, because the two spellings would be two separate players there. The refusal names the existing entry and says how to fix it. If Sheriff can't read the whitelist's names, it refuses.
 - Changes run one at a time. Two admins editing the same person both get their change. If both add the same profile, it's added once.
-- Nothing is changed until Approve or Save is pressed. Closing the menu cancels. Every click in the menu is cancelled, so no item can be taken out.
+- Nothing is changed until Approve or Save is pressed. Closing the menu cancels. Every click in the menu is canceled, so no item can be taken out.
 - The menu says whether the account has played here, has tried to join, or has never tried. An account that has never tried gets a warning, so a mistyped name that belongs to a stranger is easy to spot.
 
 Children play on the servers this was built for. [docs/kids-first.md](docs/kids-first.md) says how Sheriff protects them and what it leaves to the people running it. Owner decisions are recorded in [docs/decisions.md](docs/decisions.md).
 
 ### The menu
 
-Each profile shows its state in words with a symbol: ✔ On, + Will be added, − Will be removed, ○ Off, or ↳ Comes from another group. On and added are aqua, removed is gold. So the menu reads the same without colour, and it avoids the red and green that colour-blind players most often can't tell apart. Results in chat start with ✔, and errors with ✘. The menu shows up to 14 main profiles and 14 extras. If there are more, it says so, and the rest still work from the console.
+Each profile shows its state in words with a symbol: ✔ On, + Will be added, − Will be removed, ○ Off, or ↳ Comes from another group. On and added are aqua, removed is gold. So the menu reads the same without color, and it avoids the red and green that color-blind players most often can't tell apart. Results in chat start with ✔, and errors with ✘. The menu shows up to 14 main profiles and 14 extras. If there are more, it says so, and the rest still work from the console.
 
 ## Install
 
@@ -171,7 +171,7 @@ The bot tests in `test/` build fresh Paper servers in a temp folder, on 127.0.0.
 
 **Not tested yet:**
 
-- How the menu's new symbols, colours and hints look in a real client. The bots check which items are where, not how they read.
+- How the menu's new symbols, colors and hints look in a real client. The bots check which items are where, not how they read.
 - A real game client: whether the menu is clear and pleasant for a non-technical admin, and whether the messages read well.
 - Mojang name lookups on a real online-mode server. The tests run offline-mode servers, so the capitals check being skipped in online mode is unproven by a bot.
 - A whitelist entry with no name on a running server. Unit tests cover that refusal.
